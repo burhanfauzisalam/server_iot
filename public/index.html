@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Device Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Google Fonts - Oswald Regular -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Oswald:wght@400&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Oswald", sans-serif; /* Applying Oswald Regular font */
+      }
+      .device-image {
+        width: 150px;
+        height: auto;
+        border-radius: 50%;
+      }
+      .task-icon {
+        font-size: 3rem;
+      }
+      .footer {
+        margin-top: 50px;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6c757d;
+      }
+      .navbar {
+        position: sticky;
+        top: 0;
+        z-index: 1030; /* Pastikan navbar tetap di atas elemen lain */
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+        <a class="navbar-brand" href="#"
+          ><strong><img src="./iot.png" width="50" /></strong
+        ></a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+            <!-- <li class="nav-item"><a class="nav-link" href="#">News</a></li> -->
+            <!-- <li class="nav-item"><a class="nav-link" href="#">Settings</a></li>  -->
+            <li class="nav-item">
+              <a class="nav-link" href="#" onclick="logout()">Logout</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+      <div class="row">
+        <!-- Device Image -->
+        <div class="col-md-6 text-center mb-4">
+          <img src="./38154.jpg" alt="Device Image" class="device-image" />
+        </div>
+        <!-- Device Details -->
+        <div class="col-md-6" style="padding-left: 4em; padding-right: 4em">
+          <h4><strong>Detail Device</strong></h4>
+          <hr />
+          <p><strong>Device ID:</strong> <span id="device-id">-</span></p>
+          <p id="device-owner"><strong>Owner:</strong> Burhan</p>
+          <p>
+            <strong>Status: </strong><span id="device-status">OFFLINE</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container text-center my-4">
+      <h5>Control Device</h5>
+      <button
+        id="toggle-button"
+        class="btn btn-primary"
+        onclick="toggleControl()"
+      >
+        TURN ON
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">&copy; 2025 - Developed by Burhan Fauzi Salam</div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- WebSocket Script -->
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script>
+      // Periksa status login
+      //   function checkLogin() {
+      //     const isLoggedIn = localStorage.getItem("username");
+      //     if (!isLoggedIn) {
+      //       // Jika belum login, arahkan ke halaman login
+      //       window.location.href = "/login.html";
+      //     }
+      //   }
+
+      // Jalankan fungsi checkLogin saat halaman dimuat
+      //   checkLogin();
+
+      // const server = 'http://localhost:5003'
+      const server = "http://localhost:5003";
+      const socket = io(server);
+      // Elemen DOM untuk status perangkat dan lampu
+      const status = document.getElementById("device-status");
+      const deviceId = document.getElementById("device-id");
+      const toggleButton = document.getElementById("toggle-button");
+      let deviceState = "RELAY2_OFF";
+      const customID = "device01";
+      //   const customID = localStorage.getItem("username");
+      deviceId.textContent = `${customID}`;
+      console.log(customID);
+
+      if (!customID) {
+        status.textContent = `Please login first`;
+      } else {
+        // Koneksi WebSocket menggunakan socket.io
+        // const socket = io('https://server.habito.id');
+        const socket = io(server); // Pastikan URL ini sesuai dengan server Anda
+
+        socket.on("mqtt-status", (data) => {
+          // Perbarui status perangkat
+          status.textContent = `${data.message}`;
+          console.log(data.message);
+        });
+
+        socket.on("connect", () => {
+          console.log("Connected to WebSocket server");
+          //   const customId = localStorage.getItem("username");
+          const customId = "device01";
+          socket.emit("set-custom-id", customId);
+        });
+      }
+
+      // Fungsi toggle
+      function toggleControl() {
+        if (!customID) {
+          alert("Please login first to control the device.");
+          return;
+        }
+
+        // Toggle state
+        deviceState = deviceState === "RELAY2_ON" ? "RELAY2_OFF" : "RELAY2_ON";
+
+        const topic = `esp8266/relay/control/${customID}`;
+        socket.emit("publish", { topic, message: deviceState });
+
+        // Ubah label tombol berdasarkan status
+        toggleButton.textContent =
+          deviceState === "RELAY2_ON" ? "TURN OFF" : "TURN ON";
+        toggleButton.classList.toggle(
+          "btn-danger",
+          deviceState === "RELAY2_ON"
+        );
+        toggleButton.classList.toggle(
+          "btn-success",
+          deviceState === "RELAY2_OFF"
+        );
+
+        console.log(`Message sent: ${deviceState} to topic: ${topic}`);
+      }
+
+      // Capitalize helper
+      function capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      // Fungsi untuk logout
+      function logout() {
+        localStorage.removeItem("username");
+        window.location.href = "login.html";
+      }
+    </script>
+  </body>
+</html>
