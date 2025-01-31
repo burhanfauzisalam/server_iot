@@ -26,8 +26,8 @@ const MQTT_BROKER = process.env.MQTT_BROKER;
 // MQTT client setup
 const mqttClient = mqtt.connect(MQTT_BROKER);
 const MQTT_TOPICS = {
-  STATUS: "esp8266/status/#", // example: ESP8266/status/id_001
-  DATA: "esp8266/data/#", // example: ESP8266/status/
+  STATUS: "esp01/status/#", // example: ESP8266/status/id_001
+  DATA: "esp01/data/#", // example: ESP8266/status/
 };
 
 // Express middleware

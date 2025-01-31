@@ -123,10 +123,9 @@
       // Jalankan fungsi checkLogin saat halaman dimuat
       //   checkLogin();
 
-      // const server = 'http://localhost:5003'
       const server = "http://localhost:5003";
       const socket = io(server);
-      // Elemen DOM untuk status perangkat dan lampu
+
       const status = document.getElementById("device-status");
       const deviceId = document.getElementById("device-id");
       const toggleButton = document.getElementById("toggle-button");
