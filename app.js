@@ -62,15 +62,12 @@ async function saveUserLog(customId, newStatus) {
 function resetUserTimeout(customId) {
   if (userTimeouts[customId]) {
     clearTimeout(userTimeouts[customId]);
-    console.log(`[DEBUG] Timeout cleared for ${customId}`);
   }
 
   userTimeouts[customId] = setTimeout(() => {
-    console.log(`[DEBUG] Timeout executed for ${customId}, marking as offline`);
+    console.log(`Timeout executed for ${customId}, marking as offline`);
     setUserOffline(customId);
   }, 10000);
-
-  console.log(`[DEBUG] Timeout set for ${customId}, will expire in 10s`);
 }
 
 // Handle MQTT status messages
