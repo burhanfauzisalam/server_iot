@@ -60,6 +60,8 @@ async function saveUserLog(customId, newStatus) {
 
 // Reset timeout for marking user offline
 function resetUserTimeout(customId) {
+  if (!customId) return; // Cegah error jika customId tidak valid
+
   if (userTimeouts[customId]) {
     clearTimeout(userTimeouts[customId]);
   }
@@ -99,31 +101,26 @@ function handleStatusMessage(customId, payload) {
 
 // Mark user as offline
 function setUserOffline(customId) {
-  if (!userStatus[customId]) {
-    return;
-  }
+  if (!userStatus[customId]) return;
 
   const currentStatus = userStatus[customId].previousStatus;
-  if (currentStatus !== "OFFLINE") {
-    console.log(`User ${customId} marked as offline`);
+  if (currentStatus === "OFFLINE") return; // Hindari perubahan berulang
 
-    saveUserLog(customId, "OFFLINE");
+  console.log(`User ${customId} marked as offline`);
+  saveUserLog(customId, "OFFLINE");
 
-    userStatus[customId].previousStatus = "OFFLINE";
+  userStatus[customId].previousStatus = "OFFLINE";
 
-    if (userStatus[customId].socketId) {
-      io.to(userStatus[customId].socketId).emit("mqtt-status", {
-        topic: MQTT_TOPICS.STATUS,
-        message: "OFFLINE",
-      });
-    }
+  if (userStatus[customId].socketId) {
+    io.to(userStatus[customId].socketId).emit("mqtt-status", {
+      topic: MQTT_TOPICS.STATUS,
+      message: "OFFLINE",
+    });
   }
 
-  // Hapus timeout agar tidak ada eksekusi ulang
-  if (userTimeouts[customId]) {
-    clearTimeout(userTimeouts[customId]);
-    delete userTimeouts[customId];
-  }
+  delete userStatus[customId]; // Hapus data user dari daftar
+  clearTimeout(userTimeouts[customId]);
+  delete userTimeouts[customId];
 }
 
 // MQTT event listeners
@@ -140,6 +137,8 @@ mqttClient.on("message", (topic, message) => {
   const filterTopic = topic.split("/")[1];
   const customId = topic.split("/").pop();
   const payload = { topic, message: message.toString() };
+
+  if (!customId) return; // Hindari error jika tidak ada ID valid
 
   if (filterTopic === "status") {
     handleStatusMessage(customId, payload);
