@@ -102,13 +102,6 @@ function setUserOffline(customId) {
     if (currentStatus !== "OFFLINE") {
       console.log(`User ${customId} marked as offline`);
       saveUserLog(customId, "OFFLINE");
-      const topic1 = MQTT_TOPICS.STATUS;
-      mqttClient.publish(`${topic1}/${customId}`, "OFFLINE", (err) => {
-        if (err) {
-          console.log({ error: "Failed to publish offline message" });
-        }
-        console.log({ success: true, message: "Offline Message published" });
-      });
 
       userStatus[customId].previousStatus = "OFFLINE";
       io.to(userStatus[customId].socketId).emit("mqtt-status", {
