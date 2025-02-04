@@ -63,8 +63,11 @@ function resetUserTimeout(customId) {
   if (userTimeouts[customId]) {
     clearTimeout(userTimeouts[customId]);
   }
+
   userTimeouts[customId] = setTimeout(() => {
-    setUserOffline(customId);
+    if (userStatus[customId] && userStatus[customId].socketId) {
+      setUserOffline(customId);
+    }
   }, 10000);
 }
 
@@ -101,13 +104,22 @@ function setUserOffline(customId) {
     const currentStatus = userStatus[customId].previousStatus;
     if (currentStatus !== "OFFLINE") {
       console.log(`User ${customId} marked as offline`);
+
+      // Pastikan hanya ID yang benar-benar tidak aktif yang diubah menjadi OFFLINE
+      if (userTimeouts[customId]) {
+        clearTimeout(userTimeouts[customId]); // Hapus timeout agar tidak ada eksekusi berulang
+        delete userTimeouts[customId]; // Pastikan timeout benar-benar terhapus
+      }
+
       saveUserLog(customId, "OFFLINE");
 
       userStatus[customId].previousStatus = "OFFLINE";
-      io.to(userStatus[customId].socketId).emit("mqtt-status", {
-        topic: MQTT_TOPICS.STATUS,
-        message: "OFFLINE",
-      });
+      if (userStatus[customId].socketId) {
+        io.to(userStatus[customId].socketId).emit("mqtt-status", {
+          topic: MQTT_TOPICS.STATUS,
+          message: "OFFLINE",
+        });
+      }
     }
   }
 }
