@@ -103,13 +103,12 @@ function handleStatusMessage(customId, payload) {
 // Mark user as offline
 function setUserOffline(customId) {
   if (!userStatus[customId]) {
-    console.log(`[DEBUG] User ${customId} already offline or does not exist`);
     return;
   }
 
   const currentStatus = userStatus[customId].previousStatus;
   if (currentStatus !== "OFFLINE") {
-    console.log(`[DEBUG] User ${customId} marked as offline`);
+    console.log(`User ${customId} marked as offline`);
 
     saveUserLog(customId, "OFFLINE");
 
@@ -127,9 +126,6 @@ function setUserOffline(customId) {
   if (userTimeouts[customId]) {
     clearTimeout(userTimeouts[customId]);
     delete userTimeouts[customId];
-    console.log(
-      `[DEBUG] Timeout for ${customId} cleared after setting offline`
-    );
   }
 }
 
