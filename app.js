@@ -62,13 +62,15 @@ async function saveUserLog(customId, newStatus) {
 function resetUserTimeout(customId) {
   if (userTimeouts[customId]) {
     clearTimeout(userTimeouts[customId]);
+    console.log(`[DEBUG] Timeout cleared for ${customId}`);
   }
 
   userTimeouts[customId] = setTimeout(() => {
-    if (userStatus[customId] && userStatus[customId].socketId) {
-      setUserOffline(customId);
-    }
+    console.log(`[DEBUG] Timeout executed for ${customId}, marking as offline`);
+    setUserOffline(customId);
   }, 10000);
+
+  console.log(`[DEBUG] Timeout set for ${customId}, will expire in 10s`);
 }
 
 // Handle MQTT status messages
@@ -100,27 +102,34 @@ function handleStatusMessage(customId, payload) {
 
 // Mark user as offline
 function setUserOffline(customId) {
-  if (userStatus[customId]) {
-    const currentStatus = userStatus[customId].previousStatus;
-    if (currentStatus !== "OFFLINE") {
-      console.log(`User ${customId} marked as offline`);
+  if (!userStatus[customId]) {
+    console.log(`[DEBUG] User ${customId} already offline or does not exist`);
+    return;
+  }
 
-      // Pastikan hanya ID yang benar-benar tidak aktif yang diubah menjadi OFFLINE
-      if (userTimeouts[customId]) {
-        clearTimeout(userTimeouts[customId]); // Hapus timeout agar tidak ada eksekusi berulang
-        delete userTimeouts[customId]; // Pastikan timeout benar-benar terhapus
-      }
+  const currentStatus = userStatus[customId].previousStatus;
+  if (currentStatus !== "OFFLINE") {
+    console.log(`[DEBUG] User ${customId} marked as offline`);
 
-      saveUserLog(customId, "OFFLINE");
+    saveUserLog(customId, "OFFLINE");
 
-      userStatus[customId].previousStatus = "OFFLINE";
-      if (userStatus[customId].socketId) {
-        io.to(userStatus[customId].socketId).emit("mqtt-status", {
-          topic: MQTT_TOPICS.STATUS,
-          message: "OFFLINE",
-        });
-      }
+    userStatus[customId].previousStatus = "OFFLINE";
+
+    if (userStatus[customId].socketId) {
+      io.to(userStatus[customId].socketId).emit("mqtt-status", {
+        topic: MQTT_TOPICS.STATUS,
+        message: "OFFLINE",
+      });
     }
+  }
+
+  // Hapus timeout agar tidak ada eksekusi ulang
+  if (userTimeouts[customId]) {
+    clearTimeout(userTimeouts[customId]);
+    delete userTimeouts[customId];
+    console.log(
+      `[DEBUG] Timeout for ${customId} cleared after setting offline`
+    );
   }
 }
 
