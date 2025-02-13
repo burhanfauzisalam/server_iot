@@ -100,6 +100,14 @@
       >
         TURN ON
       </button>
+
+      <button
+        id="toggle-button1"
+        class="btn btn-primary"
+        onclick="toggleControl1()"
+      >
+        TURN ON
+      </button>
     </div>
 
     <!-- Footer -->
@@ -129,7 +137,9 @@
       const status = document.getElementById("device-status");
       const deviceId = document.getElementById("device-id");
       const toggleButton = document.getElementById("toggle-button");
+      const toggleButton1 = document.getElementById("toggle-button1");
       let deviceState = "RELAY2_OFF";
+      let deviceState1 = "SERVO_CLOSE";
       const customID = "device01";
       //   const customID = localStorage.getItem("username");
       deviceId.textContent = `${customID}`;
@@ -166,7 +176,7 @@
         // Toggle state
         deviceState = deviceState === "RELAY2_ON" ? "RELAY2_OFF" : "RELAY2_ON";
 
-        const topic = `esp8266/relay/control/${customID}`;
+        const topic = `esp01/relay/${customID}`;
         socket.emit("publish", { topic, message: deviceState });
 
         // Ubah label tombol berdasarkan status
@@ -182,6 +192,34 @@
         );
 
         console.log(`Message sent: ${deviceState} to topic: ${topic}`);
+      }
+
+      function toggleControl1() {
+        if (!customID) {
+          alert("Please login first to control the device.");
+          return;
+        }
+
+        // Toggle state
+        deviceState1 =
+          deviceState1 === "SERVO_OPEN" ? "SERVO_CLOSE" : "SERVO_OPEN";
+
+        const topic = `esp01/relay/${customID}`;
+        socket.emit("publish", { topic, message: deviceState1 });
+
+        // Ubah label tombol berdasarkan status
+        toggleButton1.textContent =
+          deviceState1 === "SERVO_OPEN" ? "TURN OFF" : "TURN ON";
+        toggleButton1.classList.toggle(
+          "btn-danger",
+          deviceState1 === "SERVO_OPEN"
+        );
+        toggleButton1.classList.toggle(
+          "btn-success",
+          deviceState1 === "SERVO_CLOSE"
+        );
+
+        console.log(`Message sent: ${deviceState1} to topic: ${topic}`);
       }
 
       // Capitalize helper
