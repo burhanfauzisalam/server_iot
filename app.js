@@ -6,6 +6,7 @@ const mqtt = require("mqtt");
 const http = require("http");
 const cors = require("cors");
 const os = require("os");
+const { execSync } = require("child_process");
 const { queryDatabase } = require("./db"); // Ganti dengan path ke file koneksi database
 
 const createStatusTable = require("./statusDB");
@@ -32,6 +33,16 @@ function getServerIP() {
   }
   return "127.0.0.1"; // Default ke localhost jika tidak ada IP yang ditemukan
 }
+
+function getPublicIP() {
+  try {
+    return execSync("curl -s ifconfig.me").toString().trim();
+  } catch (error) {
+    return "Tidak dapat mengambil IP publik";
+  }
+}
+
+const PUBLIC_IP = getPublicIP();
 
 const SERVER_IP = getServerIP();
 
@@ -205,5 +216,6 @@ app.get("/", (req, res) => {
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`Backend server running on http://${SERVER_IP}:${PORT}`);
+  console.log(`Local IP http://${SERVER_IP}:${PORT}`);
+  console.log(`Public IP http://${PUBLIC_IP}:${PORT}`);
 });
