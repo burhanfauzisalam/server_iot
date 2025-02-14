@@ -5,6 +5,7 @@ const { Server } = require("socket.io");
 const mqtt = require("mqtt");
 const http = require("http");
 const cors = require("cors");
+const os = require("os");
 const { queryDatabase } = require("./db"); // Ganti dengan path ke file koneksi database
 
 const createStatusTable = require("./statusDB");
@@ -18,6 +19,21 @@ const io = new Server(server, {
     origin: "*", // Allow all origins for testing. Restrict this in production.
   },
 });
+
+// Fungsi untuk mendapatkan alamat IP server
+function getServerIP() {
+  const interfaces = os.networkInterfaces();
+  for (let iface in interfaces) {
+    for (let addr of interfaces[iface]) {
+      if (addr.family === "IPv4" && !addr.internal) {
+        return addr.address;
+      }
+    }
+  }
+  return "127.0.0.1"; // Default ke localhost jika tidak ada IP yang ditemukan
+}
+
+const SERVER_IP = getServerIP();
 
 // Load configuration from .env
 const PORT = process.env.PORT || 3000;
@@ -189,5 +205,5 @@ app.get("/", (req, res) => {
 
 // Start server
 server.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+  console.log(`Backend server running on http://${SERVER_IP}:${PORT}`);
 });
