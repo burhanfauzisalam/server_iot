@@ -17,7 +17,7 @@
 
     <style>
       body {
-        font-family: "Oswald", sans-serif; /* Applying Oswald Regular font */
+        font-family: "Oswald", sans-serif;
       }
       .device-image {
         width: 150px;
@@ -36,7 +36,7 @@
       .navbar {
         position: sticky;
         top: 0;
-        z-index: 1030; /* Pastikan navbar tetap di atas elemen lain */
+        z-index: 1030;
       }
     </style>
   </head>
@@ -61,8 +61,6 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
-            <!-- <li class="nav-item"><a class="nav-link" href="#">News</a></li> -->
-            <!-- <li class="nav-item"><a class="nav-link" href="#">Settings</a></li>  -->
             <li class="nav-item">
               <a class="nav-link" href="#" onclick="logout()">Logout</a>
             </li>
@@ -74,26 +72,20 @@
     <!-- Main Content -->
     <div class="container my-5">
       <div class="row">
-        <!-- Device Image -->
         <div class="col-md-6 text-center mb-4">
           <img src="./38154.jpg" alt="Device Image" class="device-image" />
         </div>
-        <!-- Device Details -->
         <div class="col-md-6" style="padding-left: 4em; padding-right: 4em">
           <h4><strong>Detail Device</strong></h4>
           <hr />
           <p><strong>Device ID:</strong> <span id="device-id">-</span></p>
           <p id="device-owner"><strong>Owner:</strong> Burhan</p>
-          <p>
-            <strong>Status: </strong><span id="device-status">OFFLINE</span>
-          </p>
         </div>
       </div>
     </div>
 
     <div class="container text-center my-4">
       <h5>Control Device</h5>
-
       <div class="row justify-content-center">
         <div class="col-auto text-center">
           <p>Lampu Tidur</p>
@@ -124,71 +116,48 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- MQTT.js -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
-    <!-- WebSocket Script -->
-    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     <script>
-      // Periksa status login
-      //   function checkLogin() {
-      //     const isLoggedIn = localStorage.getItem("username");
-      //     if (!isLoggedIn) {
-      //       // Jika belum login, arahkan ke halaman login
-      //       window.location.href = "/login.html";
-      //     }
-      //   }
-
-      // Jalankan fungsi checkLogin saat halaman dimuat
-      //   checkLogin();
-
-      const server = "http://localhost:3000";
-      const socket = io(server);
-
-      const status = document.getElementById("device-status");
+      const deviceID = "device1";
       const deviceId = document.getElementById("device-id");
+
+      deviceId.textContent = `${deviceID}`;
+
+      // MQTT Configuration
+      const brokerUrl =
+        "wss://090cd3b5566041ae929bfd1b7420f5b1.s1.eu.hivemq.cloud:8884/mqtt"; // Ganti dengan broker MQTT-mu
+      const options = {
+        username: "burhan", // Ganti dengan username HiveMQ-mu
+        password: "CahayaUtara2020", // Ganti dengan password HiveMQ-mu
+        reconnectPeriod: 1000, // Coba reconnect setiap 1 detik jika koneksi terputus
+      };
+      const topicLampuTidur = "esp01/relay/device1";
+      const topicLampuUtama = "esp01/relay/device1";
+      const client = mqtt.connect(brokerUrl, options);
+
+      client.on("connect", () => {
+        console.log("Connected to MQTT Broker");
+      });
+
+      client.on("error", (err) => {
+        console.error("MQTT Connection Error:", err);
+      });
+
+      // Ambil elemen tombol
       const toggleButton = document.getElementById("toggle-button");
       const toggleButton1 = document.getElementById("toggle-button1");
+
       let deviceState = "RELAY2_OFF";
       let deviceState1 = "SERVO_CLOSE";
-      const customID = "device01";
-      //   const customID = localStorage.getItem("username");
-      deviceId.textContent = `${customID}`;
-      console.log(customID);
 
-      if (!customID) {
-        status.textContent = `Please login first`;
-      } else {
-        // Koneksi WebSocket menggunakan socket.io
-        // const socket = io('https://server.habito.id');
-        const socket = io(server); // Pastikan URL ini sesuai dengan server Anda
-
-        socket.on("mqtt-status", (data) => {
-          // Perbarui status perangkat
-          status.textContent = `${data.message}`;
-          console.log(data.message);
-        });
-
-        socket.on("connect", () => {
-          console.log("Connected to WebSocket server");
-          //   const customId = localStorage.getItem("username");
-          const customId = "device01";
-          socket.emit("set-custom-id", customId);
-        });
-      }
-
-      // Fungsi toggle
+      // Toggle Lampu Tidur
       function toggleControl() {
-        if (!customID) {
-          alert("Please login first to control the device.");
-          return;
-        }
-
-        // Toggle state
         deviceState = deviceState === "RELAY2_ON" ? "RELAY2_OFF" : "RELAY2_ON";
 
-        const topic = `esp01/relay/${customID}`;
-        socket.emit("publish", { topic, message: deviceState });
+        client.publish(topicLampuTidur, deviceState, { qos: 1 });
 
-        // Ubah label tombol berdasarkan status
         toggleButton.textContent =
           deviceState === "RELAY2_ON" ? "TURN OFF" : "TURN ON";
         toggleButton.classList.toggle(
@@ -200,23 +169,16 @@
           deviceState === "RELAY2_OFF"
         );
 
-        console.log(`Message sent: ${deviceState} to topic: ${topic}`);
+        console.log(`Published: ${deviceState} to topic: ${topicLampuTidur}`);
       }
 
+      // Toggle Lampu Utama
       function toggleControl1() {
-        if (!customID) {
-          alert("Please login first to control the device.");
-          return;
-        }
-
-        // Toggle state
         deviceState1 =
           deviceState1 === "SERVO_OPEN" ? "SERVO_CLOSE" : "SERVO_OPEN";
 
-        const topic = `esp01/relay/${customID}`;
-        socket.emit("publish", { topic, message: deviceState1 });
+        client.publish(topicLampuUtama, deviceState1, { qos: 1 });
 
-        // Ubah label tombol berdasarkan status
         toggleButton1.textContent =
           deviceState1 === "SERVO_OPEN" ? "TURN OFF" : "TURN ON";
         toggleButton1.classList.toggle(
@@ -228,18 +190,7 @@
           deviceState1 === "SERVO_CLOSE"
         );
 
-        console.log(`Message sent: ${deviceState1} to topic: ${topic}`);
-      }
-
-      // Capitalize helper
-      function capitalize(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1);
-      }
-
-      // Fungsi untuk logout
-      function logout() {
-        localStorage.removeItem("username");
-        window.location.href = "login.html";
+        console.log(`Published: ${deviceState1} to topic: ${topicLampuUtama}`);
       }
     </script>
   </body>
